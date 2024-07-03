@@ -69,6 +69,11 @@ def enableProguardInReleaseBuilds = false
  */
 def jscFlavor = 'org.webkit:android-jsc:+'
 
+def getEnvVar = { key ->
+    // return System.getenv(key) ?: project.findProperty(key) ?: ""
+    return project.hasProperty(key) ? project.property(key) : System.getenv(key)
+}
+
 android {
     ndkVersion rootProject.ext.ndkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
@@ -76,7 +81,11 @@ android {
 
     namespace "com.allinoneapp"
     defaultConfig {
-        applicationId "com.allinoneapp"
+        // applicationId "com.allinoneapp"
+        // applicationId "com.myapp.${getEnvVar('APP_ID')}"
+         def appId = "com.myapp.${getEnvVar('APP_ID')}"
+        applicationId appId
+        println "Setting applicationId to: ${appId}"  // Log applicationId
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
@@ -103,6 +112,20 @@ android {
         }
     }
 }
+
+// this is to change the name of the app dynamically
+task changeAppName {
+    doLast {
+        def appName = getEnvVar('APP_NAME')
+        println "Setting app name to: ${appName}"  // This will print the app name to the console
+        def file = file('src/main/res/values/strings.xml')
+        def text = file.text
+        text = text.replaceAll(/<string name="app_name">.*<\/string>/, '<string name="app_name">' + appName + '</string>')
+        file.text = text
+    }
+}
+
+preBuild.dependsOn(changeAppName)
 
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
